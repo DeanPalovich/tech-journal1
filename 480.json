@@ -1,0 +1,6 @@
+{
+    "vcenter_server" : "vcenter.dean.local",
+    "vm_folder" : "BASEVM",
+    "esxi_host" : "192.168.7.26",
+    "default_network" : "480-WAN"
+}
