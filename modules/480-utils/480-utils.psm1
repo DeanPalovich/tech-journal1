@@ -34,7 +34,7 @@ Function Get-480Config([string] $config_path)
 }
 Function ErrorHandling($index, $maxIndex)
 {
-    if (index -ge 1 -and $index -le $maxIndex)
+    if ($index -ge 1 -and $index -le $maxIndex)
     {
         return $true
     }
@@ -45,25 +45,41 @@ Function ErrorHandling($index, $maxIndex)
 }
 Function Select-VM([string] $folder)
 {
+    Write-Host "Select VM"
     $Selected_vm=$null
     try 
     {
         $vms = Get-VM -Location $folder
         $index = 1
+        if ($vms.Count -eq 0){
+            Write-Host "No VMS found " -ForegroundColor "Red"
+            return $null
+        }
         foreach($vm in $vms)
         {
             Write-Host [$index] $vm.Name
             $index+=1
         }    
-        $pick_index = Read-Host "Which index number [x] do you wish to pick?"
-        $selected_vm = $vms[$pick_index -1]
-        Write-Host "You picked " $selected_vm.name
+        
+        do
+        {
+            $pick_index =Read-Host "which index number [x] do you wish to pick?"
+            if ($pick_index -eq "") {
+                Write-Host "Please enter a valid index." -ForegroundColor "yellow"
+                Continue
+            }
+            if (ErrorHandling -index $pick_index -maxIndex $vms.Count)
+            {
+                $Selected_vm = $vms[$pick_index - 1]
+                Write-Host "you picked $($Selected_vm.Name)"
+            }
+        }while (-not $Selected_vm)
         return $Selected_vm
-    }
-    catch
-    {
+        }
+        catch
+        {
         Write-Host "Invalid Folder: $folder" -ForegroundColor "Red"
-    }
+        }
 }
 function Select-DB()
 {
@@ -76,6 +92,7 @@ function Select-DB()
    if ($datastores.Count -eq 0) 
    {
     Write-Host "No Datastore are found. " -ForegroundColor "Red"
+    
    }
 
    foreach ($ds in $datastores)
@@ -87,9 +104,9 @@ function Select-DB()
     do 
     {
         $choice = Read-Host "which index number [x] do you wish to pick?"
-        if (ErrorHandling - index $choice -maxIndex $datastores.COunt) {
+        if (ErrorHandling -index $choice -maxIndex $datastores.Count) {
             $selected_db = $datastores[$choice - 1]
-            Write-Host "You picked " $selected_db
+            Write-Host "You picked " $selected_db.Name
         }
     } while ($null -eq $selected_db) 
 
