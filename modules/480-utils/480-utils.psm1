@@ -87,7 +87,80 @@ function Cloner([string] $shallBeCloned, [string] $baseVM, [string] $newVMName){
     }
     catch {
       Write-Host "ERROR"
-      exit
+      
     }
   }
 
+#Milestone 6
+function Create_vSwitch([string] $vSwitchName, [string] $portGroupName){
+    try{
+        Write-Host $vSwitchName
+        Write-Host $portGroupName
+
+        New-VirtualSwitch -VMHost '192.168.7.26' -Name $vSwitchName
+        Get-VMHost '192.168.7.26' | Get-VirtualSwitch -name $vSwitchName | New-VirtualPortGroup -Name $portGroupName
+    }
+    catch{
+        Write-Host "Error with virtual switch and port group creation."
+        
+    }
+}
+
+function Get-IP([string] $vCenterServer, [string] $vmName){
+    $vm = Get-VM -Name $vmName
+    Get-VM -Name $vm | Select-Object Name, @{N="IP Address";E={@($_.Guest.IPAddress[0])}}
+    Get-NetworkAdapter -Server $vCenterServer -VM $vm.Name | Format-Table -AutoSize
+}
+
+function linkedCloner([string] $shallBeCloned, [string] $baseVM, [string] $newVMName){
+    Write-Host $shallBeCloned # = Select-VM -folder "BASEVM"
+    Write-Host $baseVM
+    Write-Host $newVMName # = Read-Host "Enter new vm name"
+    
+    
+    $vm = Get-VM -Name $shallBeCloned
+    $snapshot = Get-Snapshot -VM $vm -Name $baseVM
+    $vmhost = Get-VMHost -Name "192.168.7.26"
+    $ds = Get-DataStore -Name "datastore1-super16"
+    $linkedClone = $newVMName
+    $linkedVM = New-VM -LinkedClone -Name $linkedClone -VM $vm -ReferenceSnapshot $snapshot -VMHost $vmhost -Datastore $ds
+}
+<#
+function VMStatus([string] $vmToCheck){
+    Get-VM -Name $vmToCheck
+}
+#>
+function VMStart([string] $vmToStart){
+    try{
+        Get-VM -Name $vmToStart
+        Start-VM -VM $vmToStart -Confirm
+    }
+    catch {
+        Write-Host "Your VM is already on"
+    }
+}
+function VMStop([string] $vmToStop){
+    try{
+        Get-VM -Name $vmToStop
+        Stop-VM -VM $vmToStop -Confirm
+    }
+    catch {
+        Write-Host "Your VM is already off"
+    }
+}
+function Set-VMNetwork([string] $vmName, [string] $networkName, [string] $esxi_host_name, [string] $vcenter_server){
+    $vm = Get-VM -Name $vmName
+    Get-NetworkAdapter -vm $vm | Set-NetworkAdapter -NetworkName $networkName
+}
+
+function New-linkedCloner([string] $shallBeCloned, [string] $newVMName){
+    Write-Host $shallBeCloned
+    Write-Host $newVMName
+    
+    $vm = Get-VM -Name $shallBeCloned
+    $snapshot = Get-Snapshot -VM $vm -Name "Base"
+    $vmhost = Get-VMHost -Name "192.168.7.21"
+    $ds = Get-DataStore -Name "datastore1-super16"
+    $linkedClone = $newVMName
+    $linkedVM = New-VM -LinkedClone -Name $linkedClone -VM $vm -ReferenceSnapshot $snapshot -VMHost $vmhost -Datastore $ds
+  }
