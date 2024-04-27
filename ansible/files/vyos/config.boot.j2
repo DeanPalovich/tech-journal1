@@ -1,0 +1,103 @@
+interfaces {
+    ethernet eth0 {
+        address 192.168.7.202/24
+        description CYBERLAB
+        hw-id 00:0c:29:e5:10:8b
+    }
+    ethernet eth1 {
+        address 10.0.17.2/24
+        description 480-WAN
+        hw-id 00:0c:29:e5:10:95
+    }
+    loopback lo {
+    }
+}
+nat {
+    source {
+        rule 10 {
+            outbound-interface {
+                name eth0
+            }
+            source {
+                address 10.0.17.0/24
+            }
+            translation {
+                address masquerade
+            }
+        }
+    }
+}
+protocols {
+    static {
+        route 0.0.0.0/0 {
+            next-hop 192.168.7.250 {
+            }
+        }
+    }
+}
+service {
+    dns {
+        forwarding {
+            allow-from 10.0.17.0/24
+            listen-address 10.0.17.2
+            system
+        }
+    }
+    ntp {
+        allow-client {
+            address 0.0.0.0/0
+            address ::/0
+        }
+        server time1.vyos.net {
+        }
+        server time2.vyos.net {
+        }
+        server time3.vyos.net {
+        }
+    }
+    ssh {
+        listen-address 0.0.0.0
+    }
+}
+system {
+    config-management {
+        commit-revisions 100
+    }
+    conntrack {
+        modules {
+            ftp
+            h323
+            nfs
+            pptp
+            sip
+            sqlnet
+            tftp
+        }
+    }
+    console {
+        device ttyS0 {
+            speed 115200
+        }
+    }
+    host-name 480-fw
+    login {
+        user vyos {
+            authentication {
+                encrypted-password ****************
+                plaintext-password ****************
+            }
+        }
+    }
+    name-server 192.168.4.4
+    name-server 192.168.4.5
+    syslog {
+        global {
+            facility all {
+                level info
+            }
+            facility local7 {
+                level debug
+            }
+        }
+    }
+}

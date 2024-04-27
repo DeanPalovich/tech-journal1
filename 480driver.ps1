@@ -73,3 +73,29 @@ $networkName = Read-Host -Prompt "Enter the name of the network you would like t
 Set-VMNetwork -vmName $vmName -networkName $networkName -esxi_host_name $conf.esxi_host_name -vcenter_server $conf.vcenter_server
 #network name = BLUE1-LAN
 
+# Milestone 7
+for ($i=1; $i -le 3; $i++){
+    New-linkedCloner -shallBeCloned "rocky-base" -newVMName "rocky-$i" 
+    Set-VMNetwork -vmName "rocky-*" -networkName 'BLUE1-LAN' -esxi_host_name $conf.esxi_host_name -vcenter_server $conf.vcenter_server
+    VMStart -vmToStart "rocky-*"
+}
+
+
+for ($i=1; $i -le 3; $i++){
+    Get-IP -vCenterServer $conf.vcenter_server -vmName "rocky-$i" 
+}
+
+
+# Milestone 7.4 
+
+for ($i=1; $i -le 2; $i++){
+    New-linkedCloner -shallBeCloned "xubuntu-base" -newVMName "ubuntu-$i" 
+    Set-VMNetwork -vmName "ubuntu-*" -networkName 'BLUE1-LAN' -esxi_host_name $conf.esxi_host_name -vcenter_server $conf.vcenter_server
+    VMStart -vmToStart "ubuntu-*"
+}
+
+
+for ($i=1; $i -le 2; $i++){
+    Get-IP -vCenterServer $conf.vcenter_server -vmName "ubuntu-$i" 
+}
+
