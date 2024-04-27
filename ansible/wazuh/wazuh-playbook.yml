@@ -1,0 +1,63 @@
+# Milestone 8
+# Usage: ansible-playbook -i wazuh.yml wazuh-playbook.yml -K
+
+- name: Install wazuh server file
+  hosts: 127.0.0.1
+  tasks:
+  - name: Install wazuh server file
+    ansible.builtin.shell:
+      cmd: curl -sO https://packages.wazuh.com/4.7/wazuh-install.sh
+      chdir: /home/dean/Documents/GitHub/tech-journal1/ansible/wazuh
+
+- name: Create wazuh server via remote shell
+  hosts: 10.0.5.29
+  tasks:
+  - name: Copy wazuh server to vm
+    ansible.builtin.copy:
+      src: wazuh-install.sh
+      dest: /root
+      mode: u+rwx
+    become: true
+
+  - name: Install the server #installs wazuh server on wazuh vm
+    ansible.builtin.shell:
+      cmd: bash ./wazuh-install.sh -a
+      chdir: /root
+    become: true
+
+  - name: Pull the tar file #grab tar file from wazuh and bring to ansible, do a pull instead of push
+    ansible.builtin.fetch:
+      src: /root/wazuh-install-files.tar
+      dest: wazuh
+    become: true
+    # This creates folder/wazuh/10.0.5.29/root
+
+- name: Untar the tar file and Install wazuh server file
+  hosts: 127.0.0.1
+  tasks:
+  - name: Untar the tar file
+    ansible.builtin.shell:
+      cmd: tar xf wazuh-install-files.tar
+      chdir: /home/dean/Documents/GitHub/techjournal1/ansible/wazuh/wazuh/10.0.5.29/root
+
+  - name: Install wazuh agent file
+    ansible.builtin.shell:
+      cmd: curl -so wazuh-agent-4.7.0.deb https://packages.wazuh.com/4.x/apt/pool/main/w/wazuh-agent/wazuh-agent_4.7.0-1_amd64.deb
+      chdir: /home/dean/Documents/GitHub/techjournal1/ansible/wazuh
+
+- name: Create wazuh agent via remote shell
+  hosts: 10.0.5.30
+  tasks:
+  - name: Create wazuh agent 
+    ansible.builtin.copy:
+      src: wazuh-agent-4.7.0.deb
+      dest: /root
+    become: true
+  
+  - name: Installing wazuh agent
+    ansible.builtin.shell: |
+      sudo WAZUH_MANAGER='10.0.5.29' WAZUH_AGENT_GROUP='default' dpkg -i /root/wazuh-agent-4.7.0.deb
+      sudo systemctl daemon-reload
+      sudo systemctl enable wazuh-agent
+      sudo systemctl start wazuh-agent
+    become: true
