@@ -83,7 +83,7 @@ function Cloner([string] $shallBeCloned, [string] $baseVM, [string] $newVMName){
       $linkedVM = New-VM -LinkedClone -Name $linkedClone -VM $vm -ReferenceSnapshot $snapshot -VMHost $vmhost -Datastore $ds
       $newvm = New-VM -Name "$newVMName.base" -VM $linkedVM -VMHost $vmhost -Datastore $ds
       $newvm | New-Snapshot -Name "Base"
-      $linkedvm | Remove-VM
+      #$linkedvm | Remove-VM
     }
     catch {
       Write-Host "ERROR"
@@ -159,8 +159,51 @@ function New-linkedCloner([string] $shallBeCloned, [string] $newVMName){
     
     $vm = Get-VM -Name $shallBeCloned
     $snapshot = Get-Snapshot -VM $vm -Name "Base"
-    $vmhost = Get-VMHost -Name "192.168.7.21"
+    $vmhost = Get-VMHost -Name "192.168.7.26"
     $ds = Get-DataStore -Name "datastore1-super16"
     $linkedClone = $newVMName
     $linkedVM = New-VM -LinkedClone -Name $linkedClone -VM $vm -ReferenceSnapshot $snapshot -VMHost $vmhost -Datastore $ds
   }
+
+
+
+# Milestone 9
+function New-linkedCloner2([string] $shallBeCloned, [string] $newVMName, [string] $datastoreNum){
+    Write-Host $shallBeCloned
+    Write-Host $newVMName
+    Write-Host $datastoreNum
+    
+    $vm = Get-VM -Name $shallBeCloned
+    $snapshot = Get-Snapshot -VM $vm -Name "Base"
+    $vmhost = Get-VMHost -Name "192.168.7.26"
+    $ds = Get-DataStore -Name $datastoreNum
+    $linkedClone = $newVMName
+    $linkedVM = New-VM -LinkedClone -Name $linkedClone -VM $vm -ReferenceSnapshot $snapshot -VMHost $vmhost -Datastore $ds
+  }
+
+function SetIP([string] $VMName, [string] $interfaceIndex, [string] $IPAddr, [string] $netmask, [string] $gateway, [string] $nameserver, [string] $guestUser, [string] $guestPass){ 
+    Get-NetworkAdapter -VM $VMName | Set-NetworkAdapter -NetworkName "BLUE1-LAN"
+
+    $guestPass = Read-Host -Prompt "Enter password"
+    Write-Host $VMName
+    Write-Host $interfaceIndex
+    Write-Host $IPAddr
+    Write-Host $netmask
+    Write-Host $gateway
+    Write-Host $nameserver
+    Write-Host $guestUser
+    Write-Host $guestPass
+    
+    $scriptIP = "netsh interface ip set address name='$interfaceIndex' static $IPAddr $netmask $gateway"
+    Invoke-VMScript -VM $VMName -ScriptText $scriptIP -GuestUser $guestUser -GuestPassword $guestPass -ScriptType bat -WarningAction 0
+
+    $scriptIP = "netsh interface ip set address name='Ethernet0' static 10.0.5.7 255.255.255.0 10.0.5.2"
+    Invoke-VMScript -VM "dc-blue2" -ScriptText $scriptIP -GuestUser "deployer" -GuestPassword "passworddean$" -ScriptType bat -WarningAction 0
+
+
+    $scriptDNS1 = 'netsh interface ip set dns name=`"Ethernet0" static 10.0.5.2'
+    Invoke-VMScript -VM $VMName -ScriptText $scriptDNS1 -GuestUser $guestUser -GuestPassword $guestPass -ScriptType bat -WarningAction 0
+
+    $scriptDNS2 = 'netsh interface ipv4 set dns name=`"Ethernet1" static 8.8.8.8'
+    Invoke-VMScript -VM $VMName -ScriptText $scriptDNS2 -GuestUser $guestUser -GuestPassword $guestPass -ScriptType bat -WarningAction 0
+}
